@@ -1,0 +1,200 @@
+<html>
+  <head>
+    <link rel="stylesheet"
+      href="https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css"/>
+    <link rel="stylesheet" href="taskpane.css"/>
+    <link rel="stylesheet" href="assets/bootstrap.css" />
+  </head>
+  <body class="ms-Fabric">
+    <div class="authentication">
+      <p class="ms-fontSize-32">Checking authentication...</p>
+    </div>
+    <div class="recurringMeetingContainer container" style="display:none;">
+      <form id="createMeeting">
+          <div class="form-row form-group">
+              <label class="col-form-label col-2" style="padding-top: 1rem;">Title</label>
+              <div class="col-10">
+                  <input placeholder="Enter Meeting Title" class="form-input" type="text" id="title" style="width:100%" required />
+              </div>
+          </div>
+          <div class="form-row form-group">
+              <label class="col-form-label col-2">Start Date</label>
+              <div class="col-4">
+                  <input class="form-control" type="date" id="startDate" required />
+              </div>
+              <label class="col-form-label col-2 text-right">End Date</label>
+              <div class="col-4">
+                  <input class="form-control" type="date" id="endDate" required />
+              </div>
+          </div>
+
+          <div>
+              <label class="ms-fontSize-16 ms-fontWeight-semibold">Recurrence Pattern</label>
+              <div>
+                  <div>
+                      <input type="radio" id="sameTime" name="timeSlot" value="sameTime" checked>
+                      <label for="sameTime">Same Time</label><br>
+                      <div id="weekDays" style="padding-left:10%">
+                          <div class="form-row form-group">
+                              <label class="col-form-label col-2">Start Time</label>
+                              <div class="col-4">
+                                  <input class="form-control" type="time" id="startTime1"  />
+                              </div>
+                              <label class="col-form-label col-2 text-right">End Time</label>
+                              <div class="col-4">
+                                  <input class="form-control" type="time" id="endTime1"  />
+                              </div>
+                          </div>
+                          <div class="form-row form-group">
+                              
+                                  <div><input type="checkbox" id="monday" name="sameSlotDaysArr[]" value="Monday" /><label class="col-form-label col-3">Monday</label> </div>
+                                  <div><input type="checkbox" id="tuesday" name="sameSlotDaysArr[]" value="Tuesday" /><label class="col-form-label col-3">Tuesday</label></div>
+                                  <div><input type="checkbox" id="wednesday" name="sameSlotDaysArr[]" value="Wednesday" /><label class="col-form-label col-3">Wednesday</label></div>
+                                  <div><input type="checkbox" id="thursday" name="sameSlotDaysArr[]" value="Thursday" /><label class="col-form-label col-3">Thursday</label></div>
+                                  <div><input type="checkbox" id="friday" name="sameSlotDaysArr[]" value="Friday" /><label class="col-form-label col-3">Friday</label></div>
+                                  <div><input type="checkbox" id="saturday" name="sameSlotDaysArr[]" value="Saturday" /><label class="col-form-label col-3">Saturday</label> </div>
+                                  <div><input type="checkbox" id="sunday" name="sameSlotDaysArr[]" value="Sunday" /><label class="col-form-label col-3">Sunday</label></div>
+                              
+                          </div>
+                      </div>
+                  </div>
+                  <div>
+                      <input type="radio" id="differentTime" name="timeSlot" value="differentTime">
+                      <label for="differentTime">Different Time</label><br>
+                      <div id="weekDaysWithTime" style="display:none;padding-left:5%">
+                          <table class="table">
+                              <tr>
+                                  <td> <div><input type="checkbox" id="monday1" name="differentSlotDays[]" value="Monday" /><label class="col-form-label" style="padding-left:10px">Monday</label> </div></td>
+                                  <td >
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime" name="startTime" />
+                                      </div>
+                                  </td>
+                                  <td >
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime"  />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="tuesday1" name="differentSlotDays[]" value="Tuesday" /><label class="col-form-label" style="padding-left:10px">Tuesday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"  name="startTime" />
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime"  />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="wednesday1" name="differentSlotDays[]" value="Wednesday" /><label class="col-form-label" style="padding-left:10px">Wednesday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"  name="startTime" />
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime" />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="thursday1" name="differentSlotDays[]" value="Thursday" /><label class="col-form-label" style="padding-left:10px">Thursday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"  name="startTime" />
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime"name="endTime"  />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="friday1" name="differentSlotDays[]" value="Friday" /><label class="col-form-label" style="padding-left:10px">Friday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"  name="startTime" />
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime" />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="saturday1" name="differentSlotDays[]" value="Saturday" /><label class="col-form-label" style="padding-left:10px">Saturday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"   name="startTime"/>
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime" />
+                                      </div>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td> <div><input type="checkbox" id="sunday1" name="differentSlotDays[]" value="Sunday" /><label class="col-form-label" style="padding-left:10px">Sunday</label> </div></td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">Start Time</label>
+                                          <input class="form-control" type="time" id="startTime"  name="startTime"  />
+                                      </div>
+                                  </td>
+                                  <td>
+                                      <div>
+                                          <label class="col-form-label text-right">End Time</label>
+                                          <input class="form-control" type="time" id="endTime" name="endTime" />
+                                      </div>
+                                  </td>
+                              </tr>
+                          </table>
+
+                      </div>
+                  </div>
+              </div>
+          </div>
+         
+
+              <div class="form-row form-group">
+                  <div class="col-12" style="padding-top: 25px; width: auto; text-align: center">
+                      <button id="createMeetingButton" type="submit" class="btn btn-primary align-items-center">Create Meeting</button>
+                  </div>
+              </div>
+         
+
+
+      </form>
+  </div>
+    <div class="status"></div>
+    <div class="overlay">
+      <p class="ms-fontSize-24 ms-fontColor-white">Working...</p>
+    </div>
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-3.5.1.min.js"></script>
+    <script src="https://appsforoffice.microsoft.com/lib/beta/hosted/office.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@1.25.0/build/global/luxon.min.js"></script>
+    <script src="taskpane.js"></script>
+    <script src="assets/bootstrap.js"></script>
+
+  </body>
+</html>
