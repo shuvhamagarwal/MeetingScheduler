@@ -163,6 +163,7 @@ async function createEvent(evt) {
     eventSubject: $('#title').val(),
     eventStart: $('#startDate').val(),
     eventEnd: $('#endDate').val(),
+    isSameTime : IsSameTime(),
     formData: GetPayload()
   };
   console.log(payload);
@@ -187,19 +188,21 @@ async function createEvent(evt) {
   toggleOverlay(false);
 }
 
+function IsSameTime() {
+  let timeSlotValue = $('input[name="timeSlot"]:checked').val();
+  let isSameTime = false;
+  if (timeSlotValue === "sameTime") {
+    isSameTime = true;
+  }
+  return isSameTime;
+}
 function GetPayload() {
-  let title = $('#title').val();
-  let startDate = $('#startDate').val();
-  let endDate = $('#endDate').val();
   let timeSlotValue = $('input[name="timeSlot"]:checked').val();
   let isSameTime = false;
   if (timeSlotValue === "sameTime") {
     isSameTime = true;
   }
   var data = {};  
-  data["isSameTime"]  = isSameTime;
-  data["startDate"] = startDate;
-  data["endDate"] = endDate;
   if (isSameTime) {
     var sameSlotArr = $('input[name="sameSlotDaysArr[]"]:checked');
     if (sameSlotArr.length > 0) {
