@@ -309,12 +309,14 @@ async function createEvent(req, res) {
       isOnlineMeeting: true,
       onlineMeetingProvider: 'teamsForBusiness',
       };
-      console.log(newEvent);
       // Add attendees if present
   if (req.body['attendees']) {
+    console.log(req.body['attendees']);
     newEvent.attendees = [];
     req.body['attendees'].split(';').forEach((attendee: any) => {
+      console.log(attendee);
       newEvent.attendees.push({
+        
         type: 'required',
         emailAddress: {
           address: attendee
@@ -322,6 +324,7 @@ async function createEvent(req, res) {
       });
     });
   }
+  console.log(newEvent);
 
       // POST /me/events
       await client.api('/me/events')
