@@ -6,7 +6,13 @@ import { DayOfWeek, Event, MailboxSettings } from 'microsoft-graph';
 import 'isomorphic-fetch';
 import { getTokenOnBehalfOf } from './auth';
 import moment from 'moment-timezone'
+import { body, validationResult } from 'express-validator';
+
+import validator from 'validator';
 import { lastDayOfWeek } from 'date-fns';
+
+//var dict = {};
+var seriesMasterId, startDate, endDate;
 
 async function getAuthenticatedClient(authHeader: string): Promise<graph.Client> {
     const accessToken = await getTokenOnBehalfOf(authHeader);
@@ -46,6 +52,29 @@ async function getAuthenticatedClient(authHeader: string): Promise<graph.Client>
   
     return returnValue;
   }
+
+  async function getAccessToken(userId, msalClient) {
+    // Look up the user's account in the cache
+    try {
+      const accounts = await msalClient
+        .getTokenCache()
+        .getAllAccounts();
+  
+      const userAccount = accounts.find(a => a.homeAccountId === userId);
+  
+      // Get the token silently
+      const response = await msalClient.acquireTokenSilent({
+        scopes: process.env.OAUTH_SCOPES.split(','),
+        redirectUri: process.env.OAUTH_REDIRECT_URI,
+        account: userAccount
+      });
+  
+      return response.accessToken;
+    } catch (err) {
+      console.log(JSON.stringify(err, Object.getOwnPropertyNames(err)));
+    }
+  }
+
 const graphRouter = Router();
 graphRouter.get('/calendarview',
   async function(req, res) {
@@ -115,87 +144,30 @@ graphRouter.get('/calendarview',
 );
 
 
-graphRouter.post('/newevent',
-  async function(req, res) {
-    const authHeader = req.headers['authorization'];
+graphRouter.post('/newevent', async function(req, res) {
+  const authHeader = req.headers['authorization'];
 
-    if (authHeader) {
+    if (!authHeader) {
+      // Redirect unauthenticated requests to home page
+      res.redirect('/')
+    } else {
+
+      
+      // Create the event
       try {
-        const client = await getAuthenticatedClient(authHeader);
-
-        const timeZones = await getTimeZones(client);
-        const user_input = req.body['formData']
-        const isSameTime = req.body['isSameTime']
-        console.log(req.body);
-        var recurringDays:DayOfWeek[] =  GetDaysOfWeek(Object.keys(user_input));
-        console.log(recurringDays);
-        var recurringDays2 =  Object.keys(user_input);
-        var max_startEndTimes =  mostFrequentTime(user_input);
-        var max_startTime = max_startEndTimes[0];
-        var max_endTime = max_startEndTimes[1];
-        var duration = moment.duration(moment(max_endTime, "HH:mm:ss").diff(moment(max_startTime, "HH:mm:ss")));
-        if(isSameTime)
-        {
-          var dict = getToBeUpdatedData(user_input, recurringDays2, max_startTime, max_endTime);
-        }
-        var interval = 1;
-        var startDate = req.body['eventStart'];
-        var endDate = req.body['eventEnd'];
-        // Create a new Graph Event object
-        
-        
-        const newEvent: Event = {
-          subject: req.body['eventSubject'],
-          start: {
-            dateTime: startDate + "T" + max_startTime,
-            timeZone: timeZones.graph
-          },
-          end: {
-            dateTime: moment(startDate + "T" + max_startTime).add(duration).format(),
-            timeZone: timeZones.graph
-          },
-          recurrence: {
-            pattern: {
-              type: 'weekly',
-              interval: interval,
-              daysOfWeek: recurringDays
-            },
-            range: {
-              type: 'endDate',
-              startDate: startDate,
-              endDate: endDate
-            }
-          },
-        isOnlineMeeting: true,
-        onlineMeetingProvider: 'teamsForBusiness',
-        };
-        console.log(newEvent);
-        // Add attendees if present
-    if (req.body['attendees']) {
-      newEvent.attendees = [];
-      req.body['attendees'].forEach(attendee => {
-        newEvent.attendees.push({
-          type: 'required',
-          emailAddress: {
-            address: attendee
-          }
-        });
-      });
-    }
-
-        // POST /me/events
-        await client.api('/me/events')
-          .post(newEvent);
-
-        // Send a 201 Created
-        res.status(201).end();
+        await createEvent(req, res);
       } catch (error) {
-        console.log(error);
         res.status(500).json(error);
       }
-    } else {
-      // No auth header
-      res.status(401).end();
+      
+      try {
+        await updateEvent(req, res);
+      } catch (error) {
+        res.status(500).json(error);
+      }
+
+      // Redirect back to the calendar view
+      //return res.redirect('/calendarview');
     }
   }
 );
@@ -266,21 +238,228 @@ function getToBeUpdatedData(user_input:any, recurringDays:any, max_startTime:any
 {
   var i;
   // After calculating the most frequent time, here we will create an array for those with different times
+  console.log(user_input);
+  var temp_dict1:any = {}
   for(i in recurringDays)
   {
     var this_day = recurringDays[i];
-    var this_startTime = user_input[this_day].startTime;
-    var this_endTime = user_input[this_day].endTime;
+    console.log(this_day);
+    var this_startTime = user_input[this_day]['startTime'];
+    var this_endTime = user_input[this_day]['endTime'];
     if(this_startTime != max_startTime || this_endTime != max_endTime )
     {
       var temp_dict:any = {}
       temp_dict["startTime"] = this_startTime;
       temp_dict["endTime"] = this_endTime;
-      temp_dict[this_day] = temp_dict;
+      temp_dict1[this_day] = temp_dict;
     }
   }
-  return temp_dict
+  return temp_dict1
 }
 
+async function createEvent(req, res) {
+  const authHeader = req.headers['authorization'];
+
+  if (authHeader) {
+    try {
+      const client = await getAuthenticatedClient(authHeader);
+
+      const timeZones = await getTimeZones(client);
+      const user_input = req.body['formData']
+      const isSameTime = req.body['isSameTime']
+      console.log(req.body);
+      var recurringDays:DayOfWeek[] =  GetDaysOfWeek(Object.keys(user_input));
+      console.log(recurringDays);
+      var recurringDays2 =  Object.keys(user_input);
+      var max_startEndTimes =  mostFrequentTime(user_input);
+      var max_startTime = max_startEndTimes[0];
+      var max_endTime = max_startEndTimes[1];
+      var duration = moment.duration(moment(max_endTime, "HH:mm:ss").diff(moment(max_startTime, "HH:mm:ss")));
+      if(isSameTime)
+      {
+        //dict = getToBeUpdatedData(user_input, recurringDays2, max_startTime, max_endTime);
+      }
+      var interval = 1;
+      startDate = req.body['eventStart'];
+      endDate = req.body['eventEnd'];
+      // Create a new Graph Event object
+
+      const newEvent: Event = {
+        subject: req.body['eventSubject'],
+        start: {
+          dateTime: startDate + "T" + max_startTime,
+          timeZone: timeZones.graph
+        },
+        end: {
+          dateTime: moment(startDate + "T" + max_startTime).add(duration).format(),
+          timeZone: timeZones.graph
+        },
+        recurrence: {
+          pattern: {
+            type: 'weekly',
+            interval: interval,
+            daysOfWeek: recurringDays
+          },
+          range: {
+            type: 'endDate',
+            startDate: startDate,
+            endDate: endDate
+          }
+        },
+      isOnlineMeeting: true,
+      onlineMeetingProvider: 'teamsForBusiness',
+      };
+      console.log(newEvent);
+      // Add attendees if present
+  if (req.body['attendees']) {
+    newEvent.attendees = [];
+    req.body['attendees'].split(';').forEach((attendee: any) => {
+      newEvent.attendees.push({
+        type: 'required',
+        emailAddress: {
+          address: attendee
+        }
+      });
+    });
+  }
+
+      // POST /me/events
+      await client.api('/me/events')
+        .post(newEvent)
+        .then(res => {
+          seriesMasterId = res.id;
+          console.log("SeriesMasterId of this recurrence meeting :" + seriesMasterId);
+        });
+
+     
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);
+    }
+  } else {
+    // No auth header
+    res.status(401).end();
+  }
+}
+
+async function updateEvent(req, res) {
+  const authHeader = req.headers['authorization'];
+
+  if (authHeader) {
+    try {
+      const client = await getAuthenticatedClient(authHeader);
+      const timeZones = await getTimeZones(client);
+      const user_input = req.body['formData']
+      const isSameTime = req.body['isSameTime']
+      var recurringDays2 =  Object.keys(user_input);
+      var max_startEndTimes =  mostFrequentTime(user_input);
+      var max_startTime = max_startEndTimes[0];
+      var max_endTime = max_startEndTimes[1];
+      var dict = {}
+      if(!isSameTime)
+      {
+        dict = getToBeUpdatedData(user_input, recurringDays2, max_startTime, max_endTime);
+      }
+      console.log(dict);
+      if(Object.keys(dict).length == 0)
+      {
+        console.log("All events start on same time. So no update events");
+        res.status(201).end();
+        return;
+      }
+      var startDateTime = startDate + "T00:00:00";
+      var endDateTime= endDate + "T23:59:59";
+      var updatedIds = []
+      var isLooping = false;
+
+      console.log("Listing instances between "+ startDateTime + " and " + endDateTime);
+      while(true && !isLooping) {
+        let instances = await client.api('/me/events/' + seriesMasterId + '/instances?startDateTime='+ startDateTime + '&endDateTime=' + endDateTime).get();
+      
+        if(instances.value.length == 0){
+          console.log("No instances in this timeframe");
+          break;
+        }
+
+        console.log("Retrieved instances count : " + instances.value.length);
+
+        var i: number;
+        for(i = 0; i<instances.value.length; i++)
+        {
+          var id = instances.value[i].id;
+          if(!updatedIds.includes(id))
+          { 
+            updatedIds.push(id);
+          }
+          else
+          {
+            if(i == instances.value.length-1)
+            {
+              isLooping = true;
+              break;
+            }
+            else
+            {
+              continue;
+            }
+          }
+          updatedIds.push(id);
+          var subject = instances.value[i].subject;
+          var oldStartDate = moment(instances.value[i].start.dateTime).format('YYYY-MM-DD');
+          //This variable will be used for getting list instances in a  loop
+          startDateTime = oldStartDate + "T00:00:00";
+          //var oldEndDate = moment(instances.value[i].end.dateTime).local().format('YYYY-MM-DD');
+          var day = moment(oldStartDate).format('dddd');
+          console.log(day, oldStartDate);
+          //console.log( day);
+          if(!dict.hasOwnProperty(day))
+          {
+            console.log("Skipping for " + day);
+            continue;
+          }
+        
+          var duration = moment.duration(moment(dict[day].endTime, "HH:mm:ss").diff(moment(dict[day].startTime, "HH:mm:ss")));
+          var newStartTime = moment(oldStartDate + " " + dict[day].startTime).format();
+          var newEndTime = moment(newStartTime).add(duration);
+
+          console.log("Updated " ,  subject, oldStartDate, day, newStartTime, newEndTime, dict[day].endTime, dict[day].startTime);
+
+          //Build a Graph event
+          const updateEvent = {
+            start: {
+              dateTime: newStartTime,
+              timeZone: timeZones.graph
+            },
+            end: {
+              dateTime: newEndTime,
+              timeZone: timeZones.graph
+            }
+          };
+      
+        // POST /me/events
+          await client
+            .api('/me/events/'+ id)
+            .update(updateEvent)
+            .then(res => {
+              console.log("Updated the event");
+            });
+        }
+        await delay(500);
+     }
+      // Send a 201 Created
+      res.status(201).end();
+    } catch (error) {
+      console.log(error);
+      res.status(500).json(error);
+    }
+  } else {
+    // No auth header
+    res.status(401).end();
+  }
+}
+
+function delay(ms: number) {
+  return new Promise( resolve => setTimeout(resolve, ms) );
+}
 
 export default graphRouter;

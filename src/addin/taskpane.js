@@ -164,7 +164,8 @@ async function createEvent(evt) {
     eventStart: $('#startDate').val(),
     eventEnd: $('#endDate').val(),
     isSameTime : IsSameTime(),
-    formData: GetPayload()
+    formData: GetPayload(),
+    attendees: $('#attendees').val()
   };
   console.log(payload);
   const requestUrl = `${getBaseUrl()}/graph/newevent`;
